@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.itcast.mapper.QuotMapper">
+<!--
+#和$
+相同点：
+    1：通过#和$都可以获取对象中的属性值。 比如:#{name} /${name}   都是获取对象中的name属性值
+不同点：
+    1：
+    #传递参数时，先将参数转为？占位符，然后再赋值(PreparedStatement)
+    $传递参数时，直接把值作为SQL语句的一部分(可能存在SQL注入问题)
+    2：
+    #设置参数时，如果是字符串，会自动加上''
+    $设置参数时，直接进行拼接(如果是字符串类型的值没有''执行时会报错)
+    3：
+    获取简单类型值的时候#{}里面可以随便写,${}中必须写${value}
+
+总结:
+    一般情况下我们使用#{}即可，特殊情况再考虑使用${}
+ 	1:排序/分组操作时候拼接参数时不应该拼接‘’，所以应该使用$
+      如：order by #{orderByType}  desc ==> order by 'salary' desc  如果排序加引号, 排序无效
+    	   order by ${orderByType}  desc ==>   order by salary desc
+    2:模糊查询时，使用$也比较简单
+    如: ... where name like '%${value}%' ,调用时直接传入name即可
+    或: ...where name like #{name}   ,调用时入%name%
+    或: ...where name like concat(’%’,#{name},’$’) 调用时直接传入name即可
+
+
+-->
+    <!-- 外盘指数 -->
+    <select id="exIndexQuery" resultType="java.util.HashMap">
+        select * from bdp_quot_external_index
+    </select>
+
+    <!-- 个股日K -->
+    <select id="stockDayKline" resultType="java.util.HashMap">
+        SELECT
+          sec_code        AS code,
+          sec_name        AS name,
+          trade_date      AS date,
+          open_price      AS openPrice,
+          close_price     AS closePrice,
+          high_price      AS highPrice,
+          low_price       AS lowPrice,
+          trade_amt       AS tradeAmt,
+          trade_vol       AS tradeVol,
+          avgprice        AS avgPrice,
+          pre_close_price AS preClosePrice
+        FROM bdp_quot_stock_kline_day
+        WHERE sec_code = #{code}
+        ORDER BY trade_date DESC
+        LIMIT 30
+    </select>
+
+    <!-- 个股描述(主营业务) -->
+    <select id="stockDesc" resultType="java.util.HashMap">
+        SELECT
+            sec_code AS code,
+            sec_name AS name,
+            business,
+            sector_name AS trade
+        FROM bdp_quot_business
+        WHERE sec_code = #{code}
+    </select>
+
+    <!-- 定时任务(K线查询) -->
+    <select id="klineQuery" resultType="java.util.HashMap">
+        SELECT
+            *
+        FROM (
+            SELECT
+                *,
+                (SELECT ${firstTxDate} FROM tcc_date WHERE trade_date = CURDATE()) AS firstTxDate,
+                (SELECT ${lastTxDate} FROM tcc_date WHERE trade_date = CURDATE()) AS lastTxDate
+            FROM
+                ${tableName}
+        ) tbl
+        WHERE
+            trade_date BETWEEN firstTxDate AND lastTxDate
+    </select>
+    
+    <!--查询交易日历表-->
+    <select id="queryDate" resultType="java.util.HashMap">
+        SELECT trade_date,week_first_txdate,month_first_txdate FROM tcc_date WHERE trade_date = CURDATE()
+    </select>
+
+    <!-- 定时任务(更新K线) -->
+    <update id="updateKline">
+        UPDATE ${tableName} SET trade_date = CURDATE()
+            WHERE trade_date BETWEEN #{firstTxDate} AND #{lastTxDate}
+    </update>
+
+    <select id="query" resultType="java.util.Map">
+        select * from bdp_sector_stock limit 5
+    </select>
+</mapper>
