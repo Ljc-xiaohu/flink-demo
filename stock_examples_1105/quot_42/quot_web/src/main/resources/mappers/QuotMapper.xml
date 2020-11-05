@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.itcast.mapper.QuotMapper">
+    <!-- 外盘指数 -->
+    <select id="exIndexQuery" resultType="java.util.HashMap">
+        select * from bdp_quot_external_index
+    </select>
+
+    <!-- 个股日K -->
+    <select id="stockDayKline" resultType="java.util.HashMap">
+        SELECT
+          sec_code        AS code,
+          sec_name        AS name,
+          trade_date      AS date,
+          open_price      AS openPrice,
+          close_price     AS closePrice,
+          high_price      AS highPrice,
+          low_price       AS lowPrice,
+          trade_amt       AS tradeAmt,
+          trade_vol       AS tradeVol,
+          avgprice        AS avgPrice,
+          pre_close_price AS preClosePrice
+        FROM bdp_quot_stock_kline_day
+        WHERE sec_code = #{code}
+        ORDER BY trade_date DESC
+        LIMIT 30
+    </select>
+
+    <!-- 个股描述(主营业务) -->
+    <select id="stockDesc" resultType="java.util.HashMap">
+        SELECT
+            sec_code AS code,
+            sec_name AS name,
+            business,
+            sector_name AS trade
+        FROM bdp_quot_business
+        WHERE sec_code = #{code}
+    </select>
+
+    <!-- 定时任务(K线查询) -->
+    <select id="klineQuery" resultType="java.util.HashMap">
+        SELECT
+            *
+        FROM (
+            SELECT
+                *,
+                (SELECT ${firstTxDate} FROM tcc_date WHERE trade_date = CURDATE()) AS firstTxDate,
+                (SELECT ${lastTxDate} FROM tcc_date WHERE trade_date = CURDATE()) AS lastTxDate
+            FROM
+                ${tableName}
+        ) tbl
+        WHERE
+            trade_date BETWEEN firstTxDate AND lastTxDate
+    </select>
+    
+    <!--查询交易日历表-->
+    <select id="queryDate" resultType="java.util.HashMap">
+        SELECT
+            trade_date,week_first_txdate,month_first_txdate
+        FROM
+            tcc_date WHERE trade_date = CURDATE()
+    </select>
+
+    <!-- 定时任务(更新K线) -->
+    <update id="updateKline">
+        UPDATE
+            ${tableName}
+        SET
+            trade_date = CURDATE()
+        WHERE
+            trade_date BETWEEN #{firstTxDate} AND #{lastTxDate}
+    </update>
+
+    <select id="query" resultType="java.util.Map">
+        select * from bdp_sector_stock limit 5
+    </select>
+</mapper>

@@ -1,0 +1,40 @@
+POST http://localhost:6666/hello/test?name=jack
+Accept: */*
+Cache-Control: no-cache
+
+<> 2020-11-02T042613.200.txt
+
+###
+
+POST http://localhost:6666/hello/testname
+Accept: */*
+Cache-Control: no-cache
+
+<> 2020-11-02T042607.404.json
+
+###
+
+POST http://localhost:6666/hello/test
+Accept: */*
+Cache-Control: no-cache
+
+<> 2020-11-02T042604.200.txt
+
+###
+
+POST http://localhost:6666/hello/test
+Accept: */*
+Cache-Control: no-cache
+
+<> 2020-11-02T042603.200.txt
+
+###
+
+POST http://localhost:6666/hello
+Accept: */*
+Cache-Control: no-cache
+
+<> 2020-11-02T042559.404.json
+
+###
+
